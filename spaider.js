@@ -24,7 +24,8 @@ var log = function() {
     console.log.apply(console, arguments)
 }
 var movies = []
-var years = []
+// var years = []
+// var genres = []
 var movieFromDiv = function(div) {
     // 这个函数来从一个电影 div 里面读取电影信息
     var movie = new Movie()
@@ -32,13 +33,13 @@ var movieFromDiv = function(div) {
     var e = cheerio.load(div)
     // 然后就可以使用 querySelector 语法来获取信息了
     // .text() 获取文本信息
-    movie.name = e('.title').text()
+    movie.name = e('.title').text().split('/')[0]
     movie.score = e('.rating_num').text()
     movie.quote = e('.inq').text()
     //垃圾豆瓣 年份没有标签，和导演演员放一块。有的还有2个年份。
     movie.year = e('.info .bd p').text().match(/\d+/g).join('').slice(0, 4)
-    //提取电影年份
-    years.push(movie.year)
+    //类型,最多三种
+    movie.genres = e('.info .bd p:first-child').text().split('/').pop().split('\n')[0]
     var pic = e('.pic')
     movie.ranking = pic.find('em').text()
     // 元素的属性用 .attr('属性名') 确定
@@ -62,10 +63,15 @@ var saveMovie = function(movies) {
     var path = 'douban.txt'
     save(data, path)
 }
-//保存年份
-var saveYear = function(year) {
+var saveYear = function(movies) {
+    var data = JSON.stringify(movies, ["year"])
     var path = 'year.txt'
-    save(year, path)
+    save(data, path)
+}
+var saveGenres = function(movies) {
+    var data = JSON.stringify(movies, ["genres"])
+    var path = 'genres.txt'
+    save(data, path)
 }
 var writeToFile = function(path, data) {
     fs.writeFile(path, data, function(error) {
@@ -138,13 +144,16 @@ var moviesFromUrl = function(url) {
                 // 然后加入 movies 数组中
                 var div = e(element).html()
                 var m = movieFromDiv(div)
-                var y = m.year
-                years.push(y)
+                // var y = m.year
+                // var g = m.genres
                 movies.push(m)
+                // years.push(y)
+                // genres.push(g)
             }
             // 保存 movies 数组到文件中
             saveMovie(movies)
-            saveYear(years)
+            saveYear(movies)
+            saveGenres(movies)
         } else {
             log('*** ERROR 请求失败 ', error)
         }
@@ -171,6 +180,5 @@ var __main = function() {
     }
     // pa()
 }
-
 // 程序开始的主函数
 __main()
